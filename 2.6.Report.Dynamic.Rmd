@@ -1,5 +1,5 @@
 ---
-title: "Пример динамического отчета с использованием RMarkdown"
+title: "Пример динамического отчета с заголовком в GitHub с использованием RMarkdown"
 author: "Иван Трушин"
 date: "2022-01-03"
 always_allow_html: true
