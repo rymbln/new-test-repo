@@ -1,0 +1,190 @@
+---
+title: "Пример динамического отчета с использованием RMarkdown"
+author: "Иван Трушин"
+date: "2022-01-03"
+always_allow_html: true
+output:
+  html_document:
+    toc: yes
+    dev: 'svg'
+    df_print: kable
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+library(dplyr)
+library(leaflet)
+library(reactable)
+library(htmltools)
+library(ggplot2)
+library(plotly)
+library(gapminder)
+
+FtoC <- function(temp){
+  c <- (temp - 32) * 5 / 9
+  return(c)
+}
+
+# русификация reactable таблиц
+options(reactable.language = reactableLang(
+  pageSizeOptions   = "показано {rows} значений",
+  pageInfo          = "с {rowStart} по {rowEnd} из {rows} строк",
+  pagePrevious      = "назад",
+  pageNext          = "вперед",
+  searchPlaceholder = "Поиск...",
+  noData            = "Значения не найдены"
+))
+
+```
+
+# Главный заголовок документа
+
+## Текст
+
+Абзац простого текста. Простой текст можно писать так как он есть. 
+При необходимости можно разбивать текст на абзацы.
+
+Для этого достаточно начать писать с новой строки. 
+
+## Списки
+
+Маркированные:
+
+- Первый пункт
+- Второй пункт
+- Третий пункт
+- Четвертый пункт
+- Пятый пункт
+- Шестой пункт
+
+Так и нумерованные:
+
+1. Первый пункт
+2. Второй пункт
+3. Третий пункт
+
+## Ссылки
+
+Ссылки оформляются следующим образом:
+
+[Яндекс](https://ya.ru/)
+
+## Картинки из интернета
+
+Можно добавлять изображения как из интернета
+
+![Картинка из интернета](https://posit.co/wp-content/uploads/2022/10/rstudio-ide-dlpg-hero-test.png)
+
+## Картинки с компьютера
+
+Можно добавлять изображения с диска
+
+![Картинка с диска](templates/cheers.jpg)
+
+## Пример кода на R
+
+В примере ниже выводится и код, и результаты его выполнения:
+
+```{r, fig.cap = "Температура по месяцам", out.width='50%', fig.align='center'}
+data <- airquality
+month_names <- c("Январь","Февраль","Март","Апрель",
+                 "Май","Июнь","Июль","Август",
+                 "Сентябрь","Октябрь","Ноябрь", "Декабрь")
+data$MonthName <- month_names[data$Month]
+boxplot(Temp ~ MonthName, data = data, col = "green")
+```
+
+## Пример кода на R без вывода самого кода
+
+Можно не выводить код, тогда нужно добавить атрибут `echo = false`
+
+```{r, echo = FALSE}
+hist(data$Temp, 
+     main = "Частота температуры", 
+     xlab = "Температура", 
+     ylab = "Количество")
+```
+
+## Таблицы
+
+Можно просто выводить таблицы
+
+```{r, echo=FALSE}
+data %>% select(MonthName, Day, Temp) %>% head()
+```
+## Таблицы с оформлением
+
+Можно адаптировать оформление для печатных документов и добавить к ним заголовок. 
+
+```{r, echo=FALSE}
+data_aggr <- data %>% 
+  group_by(MonthName) %>% 
+  mutate(MeanTemp = mean(Temp)) %>% 
+  select(MonthName, MeanTemp) %>% 
+  distinct() %>% 
+  ungroup()
+
+knitr::kable(data_aggr, 
+             caption = 'Средняя температура по месяцам', 
+             col.names = c("Месяц","Средняя температура"),
+             align = "lr")
+```
+
+## Вставка значения в текст
+
+```{r, echo=FALSE}
+maxMeanTemp <- filter(data_aggr, 
+                      MeanTemp == max(data_aggr$MeanTemp)
+                      )$MonthName
+```
+
+Максимальная средняя температура зафиксирована за `r maxMeanTemp`.
+
+## Интерактивные компоненты
+
+### Таблицы
+
+```{r,  echo=FALSE}
+reactable(data, filterable = TRUE, searchable = TRUE)
+```
+
+### Карты
+
+```{r out.width='100%', echo=FALSE}
+leaflet() %>% addTiles() %>%
+  setView(32.06006102596806, 54.76838259349348, zoom = 17) %>%
+  addPopups(
+    32.06006102596806, 54.76838259349348,
+    'Смоленский государственный медицинский университет'
+  )
+```
+
+
+### Графики
+
+```{r, echo=FALSE}
+p <- gapminder %>%
+  filter(year==1977) %>%
+  ggplot( aes(gdpPercap, lifeExp, size = pop, color=continent)) +
+  geom_point() +
+  theme_bw()
+
+ggplotly(p)
+```
+
+
+### Вкладки {.tabset}
+
+#### График
+
+```{r}
+mtcars %>% 
+  ggplot(aes(x = hp, y = mpg)) +
+  geom_point()
+```
+
+#### Таблица
+
+```{r}
+mtcars %>% 
+  glimpse()
+```
